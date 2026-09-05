@@ -2,7 +2,7 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-const baseApiUrl = async () => {
+const mahmud = async () => {
         const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
         return base.data.mahmud;
 };
@@ -10,39 +10,35 @@ const baseApiUrl = async () => {
 module.exports = {
         config: {
                 name: "murgi",
-                aliases: ["chicken", "মুরগি"],
-                version: "1.7",
+                version: "2.7",
                 author: "MahMUD",
                 countDown: 10,
                 role: 0,
                 description: {
-                        bn: "কাউকে মুরগি বানিয়ে মজার ছবি তৈরি করুন",
-                        en: "Create a funny murgi (hen) image of someone",
-                        vi: "Tạo một bức ảnh gà vui nhộn về ai đó"
+                        en: "Give someone a murgi effect",
+                        vi: "Tạo hiệu ứng murgi cho ai đó"
                 },
                 category: "fun",
                 guide: {
-                        bn: '   {pn} <@tag/reply/UID>: কাউকে মুরগি বানাতে ট্যাগ করুন',
-                        en: '   {pn} <@tag/reply/UID>: Tag/Reply to make someone murgi',
-                        vi: '   {pn} <@tag/reply/UID>: Gắn thẻ để biến ai đó thành gà'
+                        en: '   {pn} <@tag>: Give murgi effect by tagging'
+                                + '\n   {pn} <uid>: Create effect using UID'
+                                + '\n   (Or use by replying to a message)',
+                        vi: '   {pn} <@tag>: Tạo hiệu ứng murgi bằng cách gắn thẻ'
+                                + '\n   {pn} <uid>: Tạo hiệu ứng bằng UID'
+                                + '\n   (Hoặc phản hồi tin nhắn)'
                 }
         },
 
         langs: {
-                bn: {
-                        noTarget: "× বেবি, কাউকে মেনশন দাও, রিপ্লাই করো অথবা UID দাও! 🐓",
-                        success: "এই নাও তোমার মুরগি ছবি বেবি! 🐸",
-                        error: "× সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।"
-                },
                 en: {
-                        noTarget: "× Baby, mention, reply, or provide UID of the target! 🐓",
-                        success: "Here's your murgi image baby! 🐸",
-                        error: "× API error: %1. Contact MahMUD for help."
+                        noTarget: "× Baby, mention, reply, or provide UID of the target.",
+                        success: "Baby, it’s just for fun. Don’t take it seriously.\n• 𝐄𝐟𝐟𝐞𝐜𝐭: 𝐌𝐮𝐫𝐠𝐢\n• 𝐓𝐚𝐫𝐠𝐞𝐭: %1",
+                        error: "API error: %1. Contact MahMUD for help.\n•WhatsApp: 01836298139"
                 },
                 vi: {
-                        noTarget: "× Cưng ơi, hãy gắn thẻ, phản hồi hoặc cung cấp UID! 🐓",
-                        success: "Ảnh con gà của cưng đây! 🐸",
-                        error: "× Lỗi: %1. Liên hệ MahMUD để hỗ trợ."
+                        noTarget: "× Cưng ơi, hãy gắn thẻ, phản hồi hoặc cung cấp UID mục tiêu.",
+                        success: "Baby, it’s just for fun. Don’t take it seriously.\n• 𝐄𝐟𝐟𝐞𝐜𝐭: 𝐌𝐮𝐫𝐠𝐢\n• 𝐓𝐚𝐫𝐠𝐞𝐭: %1",
+                        error: "API error: %1. Contact MahMUD for help.\n•WhatsApp: 01836298139"
                 }
         },
 
@@ -52,41 +48,56 @@ module.exports = {
                         return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
                 }
 
-                const { mentions, messageReply } = event;
-                let id;
+                const { senderID, mentions, messageReply, messageID } = event;
+                let id2;
+                let targetName = "";
 
-                if (Object.keys(mentions).length > 0) {
-                        id = Object.keys(mentions)[0];
-                } else if (messageReply) {
-                        id = messageReply.senderID;
+                if (messageReply) {
+                        id2 = messageReply.senderID;
+                } else if (Object.keys(mentions).length > 0) {
+                        id2 = Object.keys(mentions)[0];
                 } else if (args[0] && !isNaN(args[0])) {
-                        id = args[0];
+                        id2 = args[0];
+                } else {
+                        id2 = senderID;
                 }
 
-                if (!id) return message.reply(getLang("noTarget"));
+                try {
+                        const userInfo = await api.getUserInfo(id2);
+                        if (userInfo && userInfo[id2]) {
+                                targetName = userInfo[id2].name || userInfo[id2].firstName || "User";
+                        } else {
+                                targetName = "User";
+                        }
+                } catch (e) {
+                        targetName = "User";
+                }
+
+                if (!id2) return message.reply(getLang("noTarget"));
+
+                api.setMessageReaction("⏳", messageID, () => { }, true);
 
                 const cacheDir = path.join(__dirname, "cache");
-                if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
-                const filePath = path.join(cacheDir, `murgi_${id}.png`);
+                const filePath = path.join(cacheDir, `murgi_${id2}.png`);
 
                 try {
-                        api.setMessageReaction("🐓", event.messageID, () => {}, true);
+                        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
+
+                        const response = await axios.get(`${await mahmud()}/api/fun?type=murgi&user=${id2}`, { responseType: "arraybuffer" });
                         
-                        const baseUrl = await baseApiUrl();
-                        const url = `${baseUrl}/api/murgi?user=${id}`;
-
-                        const response = await axios.get(url, { responseType: "arraybuffer" });
                         fs.writeFileSync(filePath, Buffer.from(response.data));
-
+ 
+                        api.setMessageReaction("🪽", messageID, () => { }, true);
+  
                         return message.reply({
-                                body: getLang("success"),
+                                body: getLang("success", targetName),
                                 attachment: fs.createReadStream(filePath)
                         }, () => {
                                 if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
                         });
 
                 } catch (err) {
-                        console.error("Murgi Error:", err);
+                        console.error("error:", err);
                         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
                         return message.reply(getLang("error", err.message));
                 }
