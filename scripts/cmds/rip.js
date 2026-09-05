@@ -2,7 +2,7 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-const baseApiUrl = async () => {
+const mahmud = async () => {
         const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
         return base.data.mahmud;
 };
@@ -10,39 +10,35 @@ const baseApiUrl = async () => {
 module.exports = {
         config: {
                 name: "rip",
-                aliases: ["কবর"],
-                version: "1.7",
+                version: "2.7",
                 author: "MahMUD",
                 countDown: 10,
                 role: 0,
                 description: {
-                        bn: "কাউকে কবর দেওয়ার এডিট ছবি তৈরি করুন",
-                        en: "Create a RIP tombstone edit image of someone",
-                        vi: "Tạo ảnh chỉnh sửa bia mộ RIP cho ai đó"
+                        en: "Give someone a rip effect",
+                        vi: "Tạo hiệu ứng rip cho ai đó"
                 },
                 category: "fun",
                 guide: {
-                        bn: '   {pn} <মেনশন/রিপ্লাই/UID>: কমান্ডটি ব্যবহার করে ছবি তৈরি করুন',
-                        en: '   {pn} <mention/reply/UID>: Use to create tombstone image',
-                        vi: '   {pn} <đề cập/trả lời/UID>: Sử dụng để tạo hình ảnh bia mộ'
+                        en: '   {pn} <@tag>: Give rip effect by tagging'
+                                + '\n   {pn} <uid>: Create effect using UID'
+                                + '\n   (Or use by replying to a message)',
+                        vi: '   {pn} <@tag>: Tạo hiệu ứng rip bằng cách gắn thẻ'
+                                + '\n   {pn} <uid>: Tạo hiệu ứng bằng UID'
+                                + '\n   (Hoặc phản hồi tin nhắn)'
                 }
         },
 
         langs: {
-                bn: {
-                        noTarget: "× বেবি, কাকে কবর দেবে? মেনশন, রিপ্লাই বা UID দাও! 🐸",
-                        success: "𝐄𝐟𝐟𝐞𝐜𝐭 𝐑𝐈𝐏 𝐬𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥 𝐛𝐚𝐛𝐲 <😘",
-                        error: "× সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।"
-                },
                 en: {
-                        noTarget: "× Baby, mention, reply, or provide UID of the target! 🐸",
-                        success: "𝐄𝐟𝐟𝐞𝐜𝐭 𝐑𝐈𝐏 𝐬𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥 𝐛𝐚𝐛𝐲 <😘",
-                        error: "× API error: %1. Contact MahMUD for help."
+                        noTarget: "× Baby, mention, reply, or provide UID of the target.",
+                        success: "Baby, it’s just for fun. Don’t take it seriously.\n• 𝐄𝐟𝐟𝐞𝐜𝐭: 𝐑𝐢𝐩\n• 𝐓𝐚𝐫𝐠𝐞𝐭: %1",
+                        error: "API error: %1. Contact MahMUD for help.\n•WhatsApp: 01836298139"
                 },
                 vi: {
-                        noTarget: "× Cưng ơi, hãy đề cập, phản hồi hoặc cung cấp UID! 🐸",
-                        success: "𝐄𝐟𝐟𝐞𝐜𝐭 𝐑𝐈𝐏 𝐭𝐡𝐚̀𝐧𝐡 𝐜𝐨̂𝐧𝐠 <😘",
-                        error: "× Lỗi: %1. Liên hệ MahMUD để hỗ trợ."
+                        noTarget: "× Cưng ơi, hãy gắn thẻ, phản hồi hoặc cung cấp UID mục tiêu.",
+                        success: "Baby, it’s just for fun. Don’t take it seriously.\n• 𝐄𝐟𝐟𝐞𝐜𝐭: 𝐑𝐢𝐩\n• 𝐓𝐚𝐫𝐠𝐞𝐭: %1",
+                        error: "API error: %1. Contact MahMUD for help.\n•WhatsApp: 01836298139"
                 }
         },
 
@@ -52,41 +48,58 @@ module.exports = {
                         return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
                 }
 
-                const { threadID, messageID, messageReply, mentions } = event;
+                const { senderID, mentions, messageReply, messageID } = event;
                 let id2;
-                if (messageReply) id2 = messageReply.senderID;
-                else if (Object.keys(mentions).length > 0) id2 = Object.keys(mentions)[0];
-                else if (args[0]) id2 = args[0];
-                else return message.reply(getLang("noTarget"));
+                let targetName = "";
 
-                const cacheDir = path.join(__dirname, "cache");
-                const filePath = path.join(cacheDir, `rip_${id2}_${Date.now()}.png`);
-                if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
+                if (messageReply) {
+                        id2 = messageReply.senderID;
+                } else if (Object.keys(mentions).length > 0) {
+                        id2 = Object.keys(mentions)[0];
+                } else if (args[0] && !isNaN(args[0])) {
+                        id2 = args[0];
+                } else {
+                        id2 = senderID;
+                }
 
                 try {
-                        
-                        api.setMessageReaction("⏳", messageID, () => {}, true);
+                        const userInfo = await api.getUserInfo(id2);
+                        if (userInfo && userInfo[id2]) {
+                                targetName = userInfo[id2].name || userInfo[id2].firstName || "User";
+                        } else {
+                                targetName = "User";
+                        }
+                } catch (e) {
+                        targetName = "User";
+                }
 
-                        const baseUrl = await baseApiUrl();
-                        const url = `${baseUrl}/api/dig?type=rip&user=${id2}`;
-                        const response = await axios.get(url, { responseType: "arraybuffer" });
-                        
-                        fs.writeFileSync(filePath, response.data);
+                if (!id2) return message.reply(getLang("noTarget"));
 
+                api.setMessageReaction("⏳", messageID, () => { }, true);
+
+                const cacheDir = path.join(__dirname, "cache");
+                const filePath = path.join(cacheDir, `rip_${id2}.png`);
+
+                try {
+                        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
+
+                        const response = await axios.get(`${await mahmud()}/api/fun?type=rip&user=${id2}`, { responseType: "arraybuffer" });
+                        
+                        fs.writeFileSync(filePath, Buffer.from(response.data));
+ 
+                        api.setMessageReaction("🪽", messageID, () => { }, true);
+  
                         return message.reply({
-                                body: getLang("success"),
+                                body: getLang("success", targetName),
                                 attachment: fs.createReadStream(filePath)
                         }, () => {
-                                api.setMessageReaction("🪽", messageID, () => {}, true);
                                 if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
                         });
 
                 } catch (err) {
-                        console.error("RIP Error:", err);
-                        api.setMessageReaction("❌", messageID, () => {}, true);
+                        console.error("error:", err);
                         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-                        const errorMsg = err.response?.data?.error || err.message;
-                        return message.reply(getLang("error", errorMsg));
+                        return message.reply(getLang("error", err.message));
                 }
         }
 };
