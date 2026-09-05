@@ -2,55 +2,55 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-const baseApiUrl = async () => {
-  const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
-  return base.data.mahmud;
+const mahmud = async () => {
+        const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
+        return base.data.mahmud;
 };
 
 module.exports = {
         config: {
                 name: "slap",
-                aliases: ["thappor"],
-                version: "1.7",
+                version: "2.7",
                 author: "MahMUD",
                 countDown: 10,
                 role: 0,
                 description: {
-                        bn: "কাউকে থাপ্পড় মারার ছবি তৈরি করুন",
-                        en: "Create a slap image of someone"
+                        en: "Give someone a slap effect",
+                        vi: "Tạo hiệu ứng slap cho ai đó"
                 },
                 category: "fun",
                 guide: {
-                        bn: '   {pn} <@tag>: কাউকে ট্যাগ করে থাপ্পড় মারুন'
-                                + '\n   {pn} <uid>: UID এর মাধ্যমে থাপ্পড় মারুন'
-                                + '\n   (অথবা কারো মেসেজে রিপ্লাই দিয়ে এটি ব্যবহার করুন)',
-                        en: '   {pn} <@tag>: Slap a tagged user'
-                                + '\n   {pn} <uid>: Slap by UID'
-                                + '\n   (Or reply to someone\'s message)'
+                        en: '   {pn} <@tag>: Give slap effect by tagging'
+                                + '\n   {pn} <uid>: Create effect using UID'
+                                + '\n   (Or use by replying to a message)',
+                        vi: '   {pn} <@tag>: Tạo hiệu ứng slap bằng cách gắn thẻ'
+                                + '\n   {pn} <uid>: Tạo hiệu ứng bằng UID'
+                                + '\n   (Hoặc phản hồi tin nhắn)'
                 }
         },
 
         langs: {
-                bn: {
-                        noTarget: "× বেবি, কাকে থাপ্পড় মারবে তাকে মেনশন দাও বা রিপ্লাই করো!",
-                        success: "এই নাও থাপ্পড়! একদম গাল লাল হয়ে গেছে 💥",
-                        error: "× থাপ্পড় মারতে গিয়ে সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।"
-                },
                 en: {
-                        noTarget: "× Baby, mention or reply to someone to slap!",
-                        success: "Here's a slap! 💥",
-                        error: "× Failed to slap: %1. Contact MahMUD for help."
+                        noTarget: "× Baby, mention, reply, or provide UID of the target.",
+                        success: "Baby, it’s just for fun. Don’t take it seriously.\n• 𝐄𝐟𝐟𝐞𝐜𝐭: 𝐒𝐥𝐚𝐩\n• 𝐓𝐚𝐫𝐠𝐞𝐭: %1",
+                        error: "API error: %1. Contact MahMUD for help.\n•WhatsApp: 01836298139"
+                },
+                vi: {
+                        noTarget: "× Cưng ơi, hãy gắn thẻ, phản hồi hoặc cung cấp UID mục tiêu.",
+                        success: "Baby, it’s just for fun. Don’t take it seriously.\n• 𝐄𝐟𝐟𝐞𝐜𝐭: 𝐒𝐥𝐚𝐩\n• 𝐓𝐚𝐫𝐠𝐞𝐭: %1",
+                        error: "API error: %1. Contact MahMUD for help.\n•WhatsApp: 01836298139"
                 }
         },
 
-        onStart: async function ({ api, message, args, event, getLang }) {
+        onStart: async function ({ api, event, args, message, getLang }) {
                 const authorName = String.fromCharCode(77, 97, 104, 77, 85, 68);
                 if (this.config.author !== authorName) {
                         return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
                 }
 
-                const { senderID, messageReply, mentions } = event;
+                const { senderID, mentions, messageReply, messageID } = event;
                 let id2;
+                let targetName = "";
 
                 if (messageReply) {
                         id2 = messageReply.senderID;
@@ -58,31 +58,47 @@ module.exports = {
                         id2 = Object.keys(mentions)[0];
                 } else if (args[0] && !isNaN(args[0])) {
                         id2 = args[0];
+                } else {
+                        id2 = senderID;
+                }
+
+                try {
+                        const userInfo = await api.getUserInfo(id2);
+                        if (userInfo && userInfo[id2]) {
+                                targetName = userInfo[id2].name || userInfo[id2].firstName || "User";
+                        } else {
+                                targetName = "User";
+                        }
+                } catch (e) {
+                        targetName = "User";
                 }
 
                 if (!id2) return message.reply(getLang("noTarget"));
 
+                api.setMessageReaction("⏳", messageID, () => { }, true);
+
+                const cacheDir = path.join(__dirname, "cache");
+                const filePath = path.join(cacheDir, `slap_${id2}.png`);
+
                 try {
-                        const baseUrl = await baseApiUrl();
-                        const url = `${baseUrl}/api/dig?type=slap&user=${senderID}&user2=${id2}`;
+                        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-                        const response = await axios.get(url, { responseType: "arraybuffer" });
-                        const cachePath = path.join(__dirname, "cache", `slap_${id2}.png`);
+                        const response = await axios.get(`${await mahmud()}/api/fun?type=slap&user=${id2}`, { responseType: "arraybuffer" });
                         
-                        if (!fs.existsSync(path.join(__dirname, "cache"))) {
-                                fs.mkdirSync(path.join(__dirname, "cache"));
-                        }
-
-                        fs.writeFileSync(cachePath, Buffer.from(response.data));
-
-                        await message.reply({
-                                body: getLang("success"),
-                                attachment: fs.createReadStream(cachePath)
+                        fs.writeFileSync(filePath, Buffer.from(response.data));
+ 
+                        api.setMessageReaction("🪽", messageID, () => { }, true);
+  
+                        return message.reply({
+                                body: getLang("success", targetName),
+                                attachment: fs.createReadStream(filePath)
+                        }, () => {
+                                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
                         });
 
-                        fs.unlinkSync(cachePath);
                 } catch (err) {
-                        console.error("Error in slap command:", err);
+                        console.error("error:", err);
+                        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
                         return message.reply(getLang("error", err.message));
                 }
         }
