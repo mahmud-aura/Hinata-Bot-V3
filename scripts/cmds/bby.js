@@ -200,7 +200,7 @@ module.exports.onChat = async ({ api, event }) => {
                                 "তোর বিয়ে হয় নি 𝗕𝗯𝘆 হইলো কিভাবে,,🙄",
                                 "আজ একটা ফোন নাই বলে রিপ্লাই দিতে পারলাম না_🙄",
                                 "চৌধুরী সাহেব আমি গরিব হতে পারি😾🤭 -কিন্তু বড়লোক না🥹 😫",
-                                "আমি অন্যের জিনিসের সাথে কথা বলি না__😏ওকে",
+                                "আমি অন্যের জিনিসের সাথে কথা বলি না__😏ওকে"
                   ];
 
              const hinataMessage = randomMessage[Math.floor(Math.random() * randomMessage.length)];
