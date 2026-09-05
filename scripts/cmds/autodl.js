@@ -9,29 +9,31 @@ const baseApiUrl = async () => {
 module.exports = {
         config: {
                 name: "autodl",
-                version: "1.7",
+                version: "2.7",
                 author: "MahMUD",
                 countDown: 0,
                 role: 0,
                 description: {
-                        bn: "টিকটক, ফেসবুক, ইনস্টাগ্রাম, ইউটিউব এবং আরও অনেক সাইট থেকে অটো ভিডিও ডাউনলোড করুন",
-                        en: "Auto download video from Tiktok, Facebook, Instagram, YouTube, and more"
+                        en: "Auto download video from Tiktok, Facebook, Instagram, YouTube, and more",
+                        vi: "Tự động tải xuống video từ Tiktok, Facebook, Instagram, YouTube và nhiều hơn nữa"
                 },
                 category: "media",
                 guide: {
-                        bn: "[ভিডিও_লিংক]\n\nSupported Platforms:\n• TikTok\n• YouTube / Shorts\n• Facebook / FB Watch\n• Instagram / Reels\n• Twitter (X)\n• Threads\n• Snapchat\n• Pinterest\n• Spotify\n• SoundCloud\n• Reddit\n• LinkedIn\n• CapCut\n• Dailymotion\n• Kwai / Kuaishou\n• Douyin\n• Bluesky\n• Tumblr",
-                        en: "[video_link]\n\nSupported Platforms:\n• TikTok\n• YouTube / Shorts\n• Facebook / FB Watch\n• Instagram / Reels\n• Twitter (X)\n• Threads\n• Snapchat\n• Pinterest\n• Spotify\n• SoundCloud\n• Reddit\n• LinkedIn\n• CapCut\n• Dailymotion\n• Kwai / Kuaishou\n• Douyin\n• Bluesky\n• Tumblr"
+                        en: '   {pn} <video_link>: Automatically download videos from TikTok, YouTube, Twitter/X, Facebook, Instagram, Tumblr, Threads, Spotify, SoundCloud, Snapchat, Reddit, Pinterest, LinkedIn, Kuaishou, Kwai, Douyin, Dailymotion, CapCut, and Bluesky'
+                                + '\n   (Or use by replying to a message containing a link)',
+                        vi: '   {pn} <video_link>: Tự động tải video từ TikTok, YouTube, Twitter/X, Facebook, Instagram, Tumblr, Threads, Spotify, SoundCloud, Snapchat, Reddit, Pinterest, LinkedIn, Kuaishou, Kwai, Douyin, Dailymotion, CapCut và Bluesky'
+                                + '\n   (Hoặc sử dụng bằng cách trả lời tin nhắn chứa liên kết)'
                 }
         },
 
         langs: {
-                bn: {
-                        defaultCaption: "ডাউনলোড করা ভিডিও",
-                        error: "× ভিডিও ডাউনলোড করতে সমস্যা হয়েছে।\n•WhatsApp: 01836298139"
-                },
                 en: {
                         defaultCaption: "Downloaded Video",
                         error: "× Failed to download video.\n•WhatsApp: 01836298139"
+                },
+                vi: {
+                        defaultCaption: "Video Đã Tải Xuống",
+                        error: "× Không thể tải xuống video.\n•WhatsApp: 01836298139"
                 }
         },
 
@@ -82,8 +84,7 @@ module.exports = {
                                 if (!fs.existsSync(__dirname + "/cache")) fs.mkdirSync(__dirname + "/cache");
                                 const path = __dirname + "/cache/mahmud.mp4";
 
-                                const base = await baseApiUrl();
-                                const response = await axios.get(`${base}/api/download?url=${encodeURIComponent(mahmud)}`);
+                                const response = await axios.get(`${await baseApiUrl()}/api/download?url=${encodeURIComponent(mahmud)}`);
                                 if (!response.data || !response.data.result) throw new Error("Failed to video URL");
 
                                 const videoUrl = response.data.result;
