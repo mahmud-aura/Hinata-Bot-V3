@@ -10,33 +10,33 @@ module.exports = {
         config: {
                 name: "alldl",
                 aliases: ["download", "dl"],
-                version: "1.7",
+                version: "2.7",
                 author: "MahMUD",
                 countDown: 10,
                 role: 0,
                 description: {
-                        bn: "যেকোনো সোশ্যাল মিডিয়া ভিডিও ডাউনলোড করুন",
-                        en: "Download videos from any social media"
+                        en: "Download videos from any social media",
+                        vi: "Tải xuống video từ bất kỳ mạng xã hội nào"
                 },
                 category: "media",
                 guide: {
-                        bn: '   {pn} <লিংক>: ভিডিওর লিংক দিন'
-                                + '\n   অথবা ভিডিও লিংকে রিপ্লাই দিয়ে {pn} লিখুন'
-                                + '\n\nSupported Platforms:\n• TikTok\n• YouTube / Shorts\n• Facebook / FB Watch\n• Instagram / Reels\n• Twitter (X)\n• Threads\n• Snapchat\n• Pinterest\n• Spotify\n• SoundCloud\n• Reddit\n• LinkedIn\n• CapCut\n• Dailymotion\n• Kwai / Kuaishou\n• Douyin\n• Bluesky\n• Tumblr',
                         en: '   {pn} <link>: Provide the video link'
                                 + '\n   Or reply to a link with {pn}'
+                                + '\n\nSupported Platforms:\n• TikTok\n• YouTube / Shorts\n• Facebook / FB Watch\n• Instagram / Reels\n• Twitter (X)\n• Threads\n• Snapchat\n• Pinterest\n• Spotify\n• SoundCloud\n• Reddit\n• LinkedIn\n• CapCut\n• Dailymotion\n• Kwai / Kuaishou\n• Douyin\n• Bluesky\n• Tumblr',
+                        vi: '   {pn} <link>: Cung cấp liên kết video'
+                                + '\n   Hoặc trả lời một liên kết bằng {pn}'
                                 + '\n\nSupported Platforms:\n• TikTok\n• YouTube / Shorts\n• Facebook / FB Watch\n• Instagram / Reels\n• Twitter (X)\n• Threads\n• Snapchat\n• Pinterest\n• Spotify\n• SoundCloud\n• Reddit\n• LinkedIn\n• CapCut\n• Dailymotion\n• Kwai / Kuaishou\n• Douyin\n• Bluesky\n• Tumblr'
                 }
         },
 
         langs: {
-                bn: {
-                        noLink: "× বেবি, একটি সঠিক ভিডিও লিংক দাও অথবা লিংকে রিপ্লাই করো!",
-                        error: "× ভিডিও ডাউনলোড করতে সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।\n•WhatsApp: 01836298139"
-                },
                 en: {
                         noLink: "× Baby, please provide a valid video link or reply to one!",
                         error: "× Download error: %1. Contact MahMUD for help.\n•WhatsApp: 01836298139"
+                },
+                vi: {
+                        noLink: "× Bé ơi, vui lòng cung cấp liên kết video hợp lệ hoặc trả lời một liên kết!",
+                        error: "× Lỗi tải xuống: %1. Liên hệ MahMUD để được giúp đỡ.\n•WhatsApp: 01836298139"
                 }
         },
 
@@ -87,27 +87,23 @@ module.exports = {
                 try {
                         api.setMessageReaction("🐤", event.messageID, () => {}, true);
                         
-                        const base = await baseApiUrl();
-                        const apiUrl = `${base}/api/download?url=${encodeURIComponent(mahmud)}`;
-                        
-                        const apiRes = await axios.get(apiUrl);
-                        if (!apiRes.data || !apiRes.data.result) {
+                        const response = await axios.get(`${await baseApiUrl()}/api/download?url=${encodeURIComponent(mahmud)}`);
+                        if (!response.data || !response.data.result) {
                                 throw new Error("Failed to fetch video URL from API");
                         }
 
-                        const videoUrl = apiRes.data.result;
-                        const caption = apiRes.data.cp || "Downloaded Video"; 
+                        const videoUrl = response.data.result;
+                        const caption = response.data.cp || "Downloaded Video"; 
 
-                        const response = await axios({
+                        const vidRes = await axios({
                                 method: 'get',
                                 url: videoUrl,
                                 responseType: 'arraybuffer'
                         });
 
-                        fs.writeFileSync(path, Buffer.from(response.data, "binary"));
+                        fs.writeFileSync(path, Buffer.from(vidRes.data, "binary"));
 
-                        api.setMessageReaction("✅", event.messageID, () => {}, true);
-
+                        api.setMessageReaction("🪽", event.messageID, () => {}, true);
                         return message.reply(
                                 {
                                         body: caption,
