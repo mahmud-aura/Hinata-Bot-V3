@@ -2,7 +2,7 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-const baseApiUrl = async () => {
+const mahmud = async () => {
         const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
         return base.data.mahmud;
 };
@@ -10,74 +10,97 @@ const baseApiUrl = async () => {
 module.exports = {
         config: {
                 name: "cow",
-                version: "1.7",
+                aliases: ["goru"],
+                version: "2.7",
                 author: "MahMUD",
+                countDown: 10,
                 role: 0,
+                description: {
+                        en: "Give someone a cow effect",
+                        vi: "Tạo hiệu ứng cow cho ai đó"
+                },
                 category: "fun",
-                cooldown: 10,
                 guide: {
-                        en: "{pn} [mention/reply/UID]",
-                        bn: "{pn} [মেনশন/রিপ্লাই/UID]",
-                        vi: "{pn} [mention/reply/UID]"
+                        en: '   {pn} <@tag>: Give cow effect by tagging'
+                                + '\n   {pn} <uid>: Create effect using UID'
+                                + '\n   (Or use by replying to a message)',
+                        vi: '   {pn} <@tag>: Tạo hiệu ứng cow bằng cách gắn thẻ'
+                                + '\n   {pn} <uid>: Tạo hiệu ứng bằng UID'
+                                + '\n   (Hoặc phản hồi tin nhắn)'
                 }
         },
 
         langs: {
-                bn: {
-                        noTarget: "• বেবি, কাকে cow বানাবে? মেনশন, রিপ্লাই বা UID দাও",
-                        error: "❌ An error occurred: contact MahMUD %1",
-                        success: "Effect cow successful"
-                },
                 en: {
-                        noTarget: "• Baby, mention, reply, or provide UID of the target",
-                        error: "❌ An error occurred: contact MahMUD %1",
-                        success: "Effect cow successful"
+                        noTarget: "× Baby, mention, reply, or provide UID of the target.",
+                        success: "Baby, it’s just for fun. Don’t take it seriously.\n• 𝐄𝐟𝐟𝐞𝐜𝐭: 𝐂𝐨𝐰\n• 𝐓𝐚𝐫𝐠𝐞𝐭: %1",
+                        error: "API error: %1. Contact MahMUD for help.\n•WhatsApp: 01836298139"
                 },
                 vi: {
-                        noTarget: "• Cưng ơi, hãy đề cập, phản hồi hoặc cung cấp UID",
-                        error: "❌ An error occurred: contact MahMUD %1",
-                        success: "Hiệu ứng cow thành công"
+                        noTarget: "× Cưng ơi, hãy gắn thẻ, phản hồi hoặc cung cấp UID mục tiêu.",
+                        success: "Baby, it’s just for fun. Don’t take it seriously.\n• 𝐄𝐟𝐟𝐞𝐜𝐭: 𝐂𝐨𝐰\n• 𝐓𝐚𝐫𝐠𝐞𝐭: %1",
+                        error: "API error: %1. Contact MahMUD for help.\n•WhatsApp: 01836298139"
                 }
         },
 
-        onStart: async function ({ api, event, args, getLang }) {
+        onStart: async function ({ api, event, args, message, getLang }) {
                 const authorName = String.fromCharCode(77, 97, 104, 77, 85, 68);
                 if (this.config.author !== authorName) {
                         return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
                 }
 
-                const { threadID, messageID, messageReply, mentions } = event;
-                let id2 = messageReply?.senderID || Object.keys(mentions)[0] || args[0];
+                const { senderID, mentions, messageReply, messageID } = event;
+                let id2;
+                let targetName = "";
 
-                if (!id2) return api.sendMessage(getLang("noTarget"), threadID, messageID);
-
-                const cacheDir = path.join(__dirname, "cache");
-                if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
-                const filePath = path.join(cacheDir, `clown_${id2}_${Date.now()}.png`);
+                if (messageReply) {
+                        id2 = messageReply.senderID;
+                } else if (Object.keys(mentions).length > 0) {
+                        id2 = Object.keys(mentions)[0];
+                } else if (args[0] && !isNaN(args[0])) {
+                        id2 = args[0];
+                } else {
+                        id2 = senderID;
+                }
 
                 try {
-                        api.setMessageReaction("⏳", messageID, () => { }, true);
+                        const userInfo = await api.getUserInfo(id2);
+                        if (userInfo && userInfo[id2]) {
+                                targetName = userInfo[id2].name || userInfo[id2].firstName || "User";
+                        } else {
+                                targetName = "User";
+                        }
+                } catch (e) {
+                        targetName = "User";
+                }
 
-                        const apiUrl = await baseApiUrl();
-                        const url = `${apiUrl}/api/dig?type=cow&user=${id2}`;
+                if (!id2) return message.reply(getLang("noTarget"));
 
-                        const response = await axios.get(url, { responseType: "arraybuffer" });
+                api.setMessageReaction("⏳", messageID, () => { }, true);
+
+                const cacheDir = path.join(__dirname, "cache");
+                const filePath = path.join(cacheDir, `cow_${id2}.png`);
+
+                try {
+                        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
+
+                        const response = await axios.get(`${await mahmud()}/api/fun?type=cow&user=${id2}`, { responseType: "arraybuffer" });
+                        
                         fs.writeFileSync(filePath, Buffer.from(response.data));
-
-                        api.sendMessage({
-                                body: getLang("success"),
+ 
+                        api.setMessageReaction("🪽", messageID, () => { }, true);
+  
+                        return message.reply({
+                                body: getLang("success", targetName),
                                 attachment: fs.createReadStream(filePath)
-                        }, threadID, (err) => {
-                                if (!err) {
-                                        api.setMessageReaction("🪽", messageID, () => { }, true);
-                                }
+                        }, () => {
                                 if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-                        }, messageID);
+                        });
 
                 } catch (err) {
-                        api.setMessageReaction("❌", messageID, () => { }, true);
+                        console.error("error:", err);
                         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-                        api.sendMessage(getLang("error", err.message || "API Error"), threadID, messageID);
+                        return message.reply(getLang("error", err.message));
                 }
         }
 };
