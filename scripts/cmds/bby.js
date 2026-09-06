@@ -110,6 +110,21 @@ module.exports.onStart = async ({ api, event, args, usersData }) => {
             }
         }
 
+        const attachments = event.attachments || [];
+        const response = (await axios.post(`${await baseApiUrl()}/api/baby?text=${encodeURIComponent(msg)}&font=3`, { attachments })).data.reply;
+
+        return api.sendMessage(response, event.threadID, (err, info) => {
+            if (!err) {
+                global.GoatBot.onReply.set(info.messageID, {
+                    commandName: module.exports.config.name,
+                    type: "reply",
+                    messageID: info.messageID,
+                    author: event.senderID,
+                    text: response
+                });
+            }
+        }, event.messageID);
+
     } catch (err) {
         console.error(err);
         api.sendMessage(`${err.response?.data || err.message}`, event.threadID, event.messageID);
@@ -122,15 +137,15 @@ module.exports.onReply = async ({ api, event }) => {
         const text = event.body?.toLowerCase() || "";
         const attachments = event.attachments || [];
         const response = (await axios.post(`${await baseApiUrl()}/api/baby?text=${encodeURIComponent(text)}&font=3`, { attachments })).data.reply;
-        
+
         api.sendMessage(response, event.threadID, (err, info) => {
             if (!err) {
                 global.GoatBot.onReply.set(info.messageID, {
-                   commandName: this.config.name,
-                   type: "reply",
-                   messageID: info.messageID,
-                   author: event.senderID,
-                   text: response
+                    commandName: module.exports.config.name,
+                    type: "reply",
+                    messageID: info.messageID,
+                    author: event.senderID,
+                    text: response
                 });
             }
         }, event.messageID);
@@ -146,12 +161,12 @@ module.exports.onChat = async ({ api, event }) => {
 
         if (event.type !== "message_reply" && hasTrigger) {
             api.setMessageReaction("🪽", event.messageID, () => {}, true);
-            
+
             const text = body.replace(/^\S+\s*/, "");
             const attachments = event.attachments || [];
-            
+
             const randomMessage = [
-                "আমাকে ডাকলে ,আমি কিন্তূ কিস করে দেবো😘 ",                      
+                "আমাকে ডাকলে ,আমি কিন্তূ কিস করে দেবো😘 ",
                 "neo amr boss k message daw 01836298139",
                 "গোলাপ ফুল এর জায়গায় আমি দিলাম তোমায় মেসেজ",
                 "বলো কি বলবা, সবার সামনে বলবা নাকি?🤭🤏",
@@ -159,7 +174,7 @@ module.exports.onChat = async ({ api, event }) => {
                 "𝗕𝗯𝘆 𝗕𝗯𝘆 না করে আমার বস মানে, MahMUD ,MahMUD ও তো করতে পারো😑?",
                 "আমার সোনার বাংলা, তারপরে লাইন কি? 🙈",
                 "🍺 এই নাও জুস খাও..!𝗕𝗯𝘆 বলতে বলতে হাপায় গেছো না 🥲",
-                "হটাৎ আমাকে মনে পড়লো 🙄", 
+                "হটাৎ আমাকে মনে পড়লো 🙄",
                 "𝗕𝗯𝘆 বলে অসম্মান করচ্ছিছ,😰😿",
                 "𝗔𝘀𝘀𝗮𝗹𝗮𝗺𝘂𝗹𝗮𝗶𝗸𝘂𝗺 🐤🐤",
                 "আমি তোমার সিনিয়র আপু ওকে 😼সম্মান দেও🙁",
@@ -183,26 +198,26 @@ module.exports.onChat = async ({ api, event }) => {
                 return await api.sendMessage(babyMessage, event.threadID, (err, info) => {
                     if (!err) {
                         global.GoatBot.onReply.set(info.messageID, {
-                           commandName: this.config.name,
-                           type: "reply",
-                           messageID: info.messageID,
-                           author: event.senderID,
-                           text: babyMessage
+                            commandName: module.exports.config.name,
+                            type: "reply",
+                            messageID: info.messageID,
+                            author: event.senderID,
+                            text: babyMessage
                         });
                     }
                 }, event.messageID);
             }
 
             const response = (await axios.post(`${await baseApiUrl()}/api/baby?text=${encodeURIComponent(text)}&font=3`, { attachments })).data.reply;
-            
+
             return await api.sendMessage(response, event.threadID, (err, info) => {
                 if (!err) {
                     global.GoatBot.onReply.set(info.messageID, {
-                       commandName: this.config.name,
-                           type: "reply",
-                           messageID: info.messageID,
-                           author: event.senderID,
-                           text: response
+                        commandName: module.exports.config.name,
+                        type: "reply",
+                        messageID: info.messageID,
+                        author: event.senderID,
+                        text: response
                     });
                 }
             }, event.messageID);
