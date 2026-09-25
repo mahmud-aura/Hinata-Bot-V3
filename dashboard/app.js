@@ -242,12 +242,7 @@ module.exports = async (api) => {
 		});
 	});
 
-	app.post("/changefbstate", isAuthenticated, isVeryfiUserIDFacebook, (req, res) => {
-		if (!global.GoatBot.config.adminBot.includes(req.user.facebookUserID))
-			return res.send({
-				status: "error",
-				message: getText("app", "notPermissionChangeFbstate")
-			});
+	app.post("/changefbstate", isAuthenticated, isVeryfiUserIDFacebook, isAdmin, (req, res) => {
 		const { fbstate } = req.body;
 		if (!fbstate)
 			return res.send({
